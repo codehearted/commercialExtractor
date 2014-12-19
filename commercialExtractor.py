@@ -1,20 +1,21 @@
 ### Commercial Detector
 # Paul Jacobs
-# v0.1.1
-# Updated 12/12/14
+# v0.1.2
+# Updated 12/19/14
 
 from essentia.standard import *
 from pylab import plot, show, figure, imshow, axis, subplot
 from numpy import *
 from ordereddict import OrderedDict
 import yaml
+import sys
 
 
 # config constants
 silenceThreshold = 1.0e-4
-commercialLengthVariance = 0.2
-commercialUnitLength = 15.0
-minimumCommercialLength = 7.5
+commercialLengthVariance = 0.15 # 0.0 - 1.0 / 1.0 = 100%
+commercialUnitLength = 15.0 # seconds
+minimumCommercialLength = 7.5 # seconds
 
 #constants
 sr = 44100
@@ -45,24 +46,33 @@ def framesToTime(frame):
 ### Tested and Working Great
 #inputFile = 'Safari_20141212_1103_CommercialDetection_pandora.aiff'
 #inputFile = 'Safari_20141219_0353_CommercialDetection_pandora.aiff'
-#inputFile = 'Safari_20141129_1443_CommercialDetection_irregular_short.aiff'
+inputFile = 'Safari_20141129_1443_CommercialDetection_irregular_short.aiff'
 
 
-inputFile = 'Safari_20141129_1547_CommercialDetection_Colbert.aiff'
+# inputFile = 'Safari_20141129_1547_CommercialDetection_Colbert.aiff'
+
 
 # storage
 pool = essentia.Pool()
 
 #print 'processing: ' + inputFile
 
+if (len(sys.argv) > 1):
+	inputFile = sys.argv[1]
+	inputDir = ''
+else:
+    print "Using default " + inputDir+inputFile
 # processing module setup
 audio = MonoLoader(filename = inputDir+inputFile)()
+
 w = Windowing(type = 'hann')
-spectrum = Spectrum()  # FFT() would return the complex FFT, here we just want the magnitude spectrum
-mfcc = MFCC()
-rms = RMS()
 levels = LevelExtractor(frameSize = hopSz*4, hopSize = hopSz)
-loudness = Loudness()
+
+#    spectrum = Spectrum()  # FFT() would return the complex FFT, here we just want the magnitude spectrum
+#    mfcc = MFCC()
+#    rms = RMS()
+#    loudness = Loudness()
+
 
 
 # processing stream
@@ -108,6 +118,7 @@ pool.add('silenceEdges',silenceEdges)
 
 segments = OrderedDict()
 commercials = OrderedDict()
+commercialsBySample = OrderedDict()
 
 thisSilenceStartTime = 0;
 lastSilenceFinishTime = 0;
@@ -132,6 +143,9 @@ for timeIndex in sorted(silences):
 				((soundDurationInSeconds % commercialUnitLength) >= \
 				(commercialUnitLength - commercialUnitLength*commercialLengthVariance)))):
 					commercials[framesToTime(lastSilenceFinishTime)] = secondsToShortTime(soundDurationInSeconds)
+					commercialsBySample[lastSilenceFinishTime*hopSz] = soundDuration
+					commercialsBySample[(lastSilenceFinishTime+soundDuration)*hopSz] = soundDuration
+					
 #			commercials[str(lastSilenceFinishTime)] = soundDurationInSeconds
 #			commercials[secondsToTime(lastSilenceFinishTimeInSeconds)] = secondsToTime(soundDurationInSeconds)
 	if edgeType == 2: # end of silence
@@ -143,4 +157,13 @@ print yaml.dump({'silences':silences, 'segments':segments, 'commercials':commerc
 
 #aggPool = PoolAggregator(defaultStats = ['mean','var'])(pool)
 #YamlOutput(filename = outputDir + inputFile + '.features.yaml')(aggPool)
+
+#writer = MonoWriter(filename=outputDir+inputFile+'.edited.aiff', format='aiff')
+
+
+#pool.add('editedAudio',audio)
+
+
+
+
 
