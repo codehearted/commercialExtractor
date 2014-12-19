@@ -45,8 +45,10 @@ def framesToTime(frame):
 ### Tested and Working Great
 #inputFile = 'Safari_20141212_1103_CommercialDetection_pandora.aiff'
 #inputFile = 'Safari_20141219_0353_CommercialDetection_pandora.aiff'
+#inputFile = 'Safari_20141129_1443_CommercialDetection_irregular_short.aiff'
 
-inputFile = 'Safari_20141129_1443_CommercialDetection_irregular_short.aiff'
+
+inputFile = 'Safari_20141129_1547_CommercialDetection_Colbert.aiff'
 
 # storage
 pool = essentia.Pool()
@@ -107,7 +109,7 @@ pool.add('silenceEdges',silenceEdges)
 segments = OrderedDict()
 commercials = OrderedDict()
 
-#thisSilenceStartTime = 0;
+thisSilenceStartTime = 0;
 lastSilenceFinishTime = 0;
 lastSilenceFinishTimeInSeconds = 0.0;
 soundDuration = 0;
@@ -116,7 +118,7 @@ for timeIndex in sorted(silences):
 #	print "timeIndex "+framesToTime(timeIndex)
 	edgeType = silences[timeIndex]
 	if edgeType == 1: # start of silence
-#		thisSilenceStartTime = timeIndex
+		thisSilenceStartTime = timeIndex
 		soundDuration = thisSilenceStartTime - lastSilenceFinishTime
 		soundDurationInSeconds = framesToSeconds(soundDuration)
 		segments[secondsToShortTime(framesToSeconds(lastSilenceFinishTime))] = secondsToShortTime(framesToSeconds(soundDuration))
