@@ -2,6 +2,7 @@
 # Paul Jacobs
 # v0.1.2
 # Updated 12/19/14
+# Some comments adjusted 4/4/17
 
 from essentia.standard import *
 from pylab import plot, show, figure, imshow, axis, subplot
@@ -42,20 +43,16 @@ def secondsToShortTime(sec):
 def framesToTime(frame):
 	return secondsToTime(framesToSeconds(frame))
 
-
+## Default Inputs
 ### Tested and Working Great
 #inputFile = 'Safari_20141212_1103_CommercialDetection_pandora.aiff'
 #inputFile = 'Safari_20141219_0353_CommercialDetection_pandora.aiff'
 inputFile = 'Safari_20141129_1443_CommercialDetection_irregular_short.aiff'
-
-
 # inputFile = 'Safari_20141129_1547_CommercialDetection_Colbert.aiff'
 
 
 # storage
 pool = essentia.Pool()
-
-#print 'processing: ' + inputFile
 
 if (len(sys.argv) > 1):
 	inputFile = sys.argv[1]
@@ -68,6 +65,7 @@ audio = MonoLoader(filename = inputDir+inputFile)()
 w = Windowing(type = 'hann')
 levels = LevelExtractor(frameSize = hopSz*4, hopSize = hopSz)
 
+# Additional audio data to operate on if/when useful
 #    spectrum = Spectrum()  # FFT() would return the complex FFT, here we just want the magnitude spectrum
 #    mfcc = MFCC()
 #    rms = RMS()
@@ -91,11 +89,6 @@ silencesInSecs = OrderedDict()
 it = nditer([sil, None], 
        flags=['c_index', 'refs_ok'],
        op_flags=[['readonly'],['writeonly','allocate']])
-
-
-#if (it.index == 0):
-#    it[1] = 0
-#    it.iternext()
 
 while not it.finished:
     if (sil[it.index] == 1.0): # preserve edges
@@ -134,8 +127,6 @@ for timeIndex in sorted(silences):
 		soundDurationInSeconds = framesToSeconds(soundDuration)
 		segments[secondsToShortTime(framesToSeconds(lastSilenceFinishTime))] = secondsToShortTime(framesToSeconds(soundDuration))
 #		print "segment starting "+framesToTime(lastSilenceFinishTime)+" - "+str(soundDurationInSeconds)+"\n"
-#		segments[lastSilenceFinishTime] = soundDurationInSeconds
-#		segments[secondsToTime(lastSilenceFinishTimeInSeconds)] = secondsToTime(soundDurationInSeconds)
 		if ((soundDurationInSeconds <= commercialUnitLength * 5) and \
 			(soundDurationInSeconds > minimumCommercialLength) and \
 			((soundDurationInSeconds % commercialUnitLength) <= \
@@ -146,23 +137,19 @@ for timeIndex in sorted(silences):
 					commercialsBySample[lastSilenceFinishTime*hopSz] = soundDuration
 					commercialsBySample[(lastSilenceFinishTime+soundDuration)*hopSz] = soundDuration
 					
-#			commercials[str(lastSilenceFinishTime)] = soundDurationInSeconds
-#			commercials[secondsToTime(lastSilenceFinishTimeInSeconds)] = secondsToTime(soundDurationInSeconds)
 	if edgeType == 2: # end of silence
 		lastSilenceFinishTime = timeIndex;
 		lastSilenceFinishTimeInSeconds = framesToSeconds(lastSilenceFinishTime)
 
+# Save / Print results (time ranges of detected commercials in input file)
 #YamlOutput(filename = outputDir + inputFile + '.silences.yaml')([pool['silenceEdges'],{'silences':silences, 'segments':segments, 'commercials':commercials}])
 print yaml.dump({'silences':silences, 'segments':segments, 'commercials':commercials})
 
+# Save Features Data (when uncommented)
 #aggPool = PoolAggregator(defaultStats = ['mean','var'])(pool)
 #YamlOutput(filename = outputDir + inputFile + '.features.yaml')(aggPool)
 
-#writer = MonoWriter(filename=outputDir+inputFile+'.edited.aiff', format='aiff')
-
-
-#pool.add('editedAudio',audio)
-
+# TODO: Edit audio file to remove commercials, save edited audio.
 
 
 
